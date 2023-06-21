@@ -1,0 +1,9 @@
+(
+    "Loop forever",
+    Repeater((repeat:Forever)),
+    [
+        ("Delay", Delay((duration: 5.0)), [
+            ("Do a thing", Debug((message: "I'm doing a great thing!")))
+        ]),
+    ]
+)

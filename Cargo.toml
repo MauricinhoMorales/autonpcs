@@ -1,0 +1,22 @@
+[package]
+name = "autonpcs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Alex Rozgo <alex.rozgo@gmail.com>"]
+
+[dependencies]
+bevy = { version = "0.10" }
+bevy-inspector-egui = "0.18"
+
+simula_core = { path = "../simula/crates/simula_core" }
+simula_camera = { path = "../simula/crates/simula_camera" }
+simula_viz = { path = "../simula/crates/simula_viz" }
+simula_action = { path = "../simula/crates/simula_action" }
+simula_script = { path = "../simula/crates/simula_script" }
+simula_inspector = { path = "../simula/crates/simula_inspector" }
+simula_behavior = { path = "../simula/crates/simula_behavior" }
+simula_behavior_macro = { path = "../simula/crates/simula_behavior/simula_behavior_macro" }
+
+serde = { version = "1.0", features = ["derive"] }
+crossbeam-channel = "0.5.0"
+

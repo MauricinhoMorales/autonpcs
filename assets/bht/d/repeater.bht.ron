@@ -1,0 +1,7 @@
+(
+    "Do a few times",
+    Repeater((repeat:Times(10))),
+    [
+        ("Say hi", Debug((message:"Hello, from DebugMessage0!")))
+    ]
+)

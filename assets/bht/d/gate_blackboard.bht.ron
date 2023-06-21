@@ -1,0 +1,11 @@
+(
+    "Loop Guard",
+    Repeater((repeat:Forever)),
+    [
+        ("Delay", Delay((duration: 5.0)), [
+            ("Can do?", Guard((script: Inline(r#"print(blackboard.state); blackboard.state = blackboard.state + 1; blackboard.state < 3"#))), [
+                ("Do a thing", Debug((message: "I'm doing a thing!")))
+            ])
+        ]),
+    ]
+)
