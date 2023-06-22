@@ -1,4 +1,7 @@
-use behaviors::bioma::{BiomaBehavior, BiomaBehaviorPlugin};
+use behaviors::{
+    bioma::{BiomaBehavior, BiomaBehaviorPlugin},
+    npc::{NPCBehavior, NPCBehaviorPlugin},
+};
 use bevy::{
     diagnostic::{Diagnostics, FrameTimeDiagnosticsPlugin},
     prelude::*,
@@ -57,6 +60,11 @@ fn main() {
         .add_plugin(BehaviorServerPlugin::<BiomaBehavior>::default())
         .add_plugin(BehaviorInspectorPlugin::<BiomaBehavior>::default())
         .add_startup_system(behavior_setup::<BiomaBehavior>)
+        // NPCBehavior setup
+        .add_plugin(NPCBehaviorPlugin)
+        .add_plugin(BehaviorServerPlugin::<NPCBehavior>::default())
+        .add_plugin(BehaviorInspectorPlugin::<NPCBehavior>::default())
+        .add_startup_system(behavior_setup::<NPCBehavior>)
         .run();
 }
 
@@ -134,7 +142,7 @@ fn behavior_setup<T: BehaviorFactory>(
                 BehaviorTracker {
                     file_name: file_name.clone(),
                     entity: EntityTracker::None,
-                    asset: None,
+                    asset: AssetTracker::None,
                 },
             );
             behavior_server

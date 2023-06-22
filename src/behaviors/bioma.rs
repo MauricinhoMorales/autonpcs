@@ -18,8 +18,8 @@ pub struct BiomaBehaviorAttributes {
     pub pos: Vec2,
 }
 
-#[derive(Serialize, Deserialize, TypeUuid, Debug, Clone, BehaviorFactory)]
-#[uuid = "DBE1D06F-A606-46A2-BFDA-A9480DFEAC6C"]
+#[derive(Serialize, Deserialize, TypeUuid, Debug, Clone, Reflect, FromReflect, BehaviorFactory)]
+#[uuid = "57178605-8BDA-48D9-B1B9-414E6D142663"]
 #[BehaviorAttributes(BiomaBehaviorAttributes)]
 pub enum BiomaBehavior {
     Debug(Debug),

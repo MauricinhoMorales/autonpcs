@@ -4,31 +4,27 @@ use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use std::borrow::Cow;
 
-#[derive(Debug, Default, Component, Reflect, Clone, Deserialize, Serialize, InspectorOptions)]
+#[derive(Debug, Default, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions)]
 #[reflect(InspectorOptions)]
 pub struct Spawn {
-    #[serde(default)]
-    pub message: Cow<'static, str>,
-    #[serde(default)]
-    pub fail: bool,
-    #[serde(default)]
-    #[inspector(min = 0.0, max = f64::MAX)]
-    pub duration: f64,
+    pub asset: Cow<'static, str>,
     #[serde(skip)]
-    pub start: f64,
-    #[serde(skip)]
-    pub ticks: u64,
+    pub scene: Option<Entity>,
 }
+
+// "models/character/Animation_rig/Body.glb#Scene0"
 
 impl BehaviorInfo for Spawn {
     const TYPE: BehaviorType = BehaviorType::Action;
     const NAME: &'static str = "Spawn";
+    const ICON: &'static str = "🏄";
     const DESC: &'static str = "Spawn an NPC";
 }
 
 pub fn run(
     time: Res<Time>,
     mut commands: Commands,
+    asset_server: Res<AssetServer>,
     mut spawns: Query<
         (Entity, &mut Spawn, Option<&Name>, Option<&BehaviorStarted>),
         BehaviorRunQuery,
@@ -36,18 +32,25 @@ pub fn run(
 ) {
     for (entity, mut spawn, name, started) in &mut spawns {
         let elapsed = time.elapsed_seconds_f64();
-        spawn.ticks += 1;
         if started.is_some() {
-            spawn.start = elapsed;
-            let name = name.map(|name| name.as_str()).unwrap_or("");
-            info!("[{}:{}] {}", entity.index(), name, spawn.message);
+            let scene_id = commands.spawn(SceneBundle {
+                scene: asset_server.load(spawn.asset.as_ref()),
+                ..default()
+            }).id();
+
+            spawn.scene = Some(scene_id);
         }
-        if elapsed - spawn.start > spawn.duration - f64::EPSILON {
-            if spawn.fail {
-                commands.entity(entity).insert(BehaviorFailure);
-            } else {
-                commands.entity(entity).insert(BehaviorSuccess);
+    }
+}
+
+// Remove spawned entities when the behavior is removed
+pub fn removed(mut removals: RemovedComponents<Spawn>, mut commands: Commands, spawns: Query<&Spawn>) {
+    for entity in &mut removals {
+        if let Ok(spawn) = spawns.get(entity) {
+            if let Some(scene) = spawn.scene {
+                commands.entity(scene).despawn_recursive();
             }
         }
     }
 }
+

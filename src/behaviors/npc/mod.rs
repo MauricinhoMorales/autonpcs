@@ -12,6 +12,11 @@ impl Plugin for NPCBehaviorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(BehaviorTreePlugin::<NPCBehavior>::default())
             .add_system(spawn::run)
+            .add_system(
+                spawn::removed
+                    .in_base_set(CoreSet::PostUpdate)
+                    .after(BehaviorSet::PostUpdate),
+            )
             .add_system(subtree::run::<NPCBehavior>) // Subtrees are typed, need to register them separately
             .register_type::<Subtree<NPCBehavior>>();
     }
@@ -22,8 +27,8 @@ pub struct NPCBehaviorAttributes {
     pub pos: Vec2,
 }
 
-#[derive(Serialize, Deserialize, TypeUuid, Debug, Clone, BehaviorFactory)]
-#[uuid = "DBE1D06F-A606-46A2-BFDA-A9480DFEAC6C"]
+#[derive(Serialize, Deserialize, TypeUuid, Debug, Clone, Reflect, FromReflect, BehaviorFactory)]
+#[uuid = "B814382F-645F-401E-A884-E595E51E200E"]
 #[BehaviorAttributes(NPCBehaviorAttributes)]
 pub enum NPCBehavior {
     Debug(Debug),
