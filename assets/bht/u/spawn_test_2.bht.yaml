@@ -1,0 +1,26 @@
+- ➡ Sequencer
+- !Sequencer
+  random: false
+- - - 🏄 Spawn
+    - !Spawn
+      asset:
+        eval: '"npc/Animation_rig/Body.glb#Scene0"'
+      name:
+        eval: '"🏄 Character"'
+      scene: null
+    - []
+    - pos:
+      - 341.0703
+      - 2.3632812
+  - - 🏋 Anim
+    - !Anim
+      asset: npc/Animation_rig/Skinning_Test.glb#Animation0
+      target: SkinningTest
+      repeat: true
+    - []
+    - pos:
+      - 371.28516
+      - 199.09375
+- pos:
+  - 127.5
+  - 2.546875

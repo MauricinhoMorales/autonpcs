@@ -2,6 +2,7 @@ use bevy::{ecs::system::EntityCommands, prelude::*, reflect::TypeUuid};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_behavior_macro::BehaviorFactory;
+use super::npc::NPCBehavior;
 
 pub struct BiomaBehaviorPlugin;
 
@@ -35,7 +36,8 @@ pub enum BiomaBehavior {
     Guard(Guard),
     Timeout(Timeout),
 
-    Subtree(Subtree<BiomaBehavior>), // Substrees are typed, this loads same tree type
+    Subtree(Subtree<BiomaBehavior>),
+    NPC(Subtree<NPCBehavior>),
 }
 
 impl Default for BiomaBehavior {
@@ -70,25 +72,27 @@ impl BehaviorInspectable for BiomaBehavior {
             BiomaBehavior::Guard(_) => Color::hex("#440").unwrap(),
             BiomaBehavior::Timeout(_) => Color::hex("#440").unwrap(),
             BiomaBehavior::Subtree(_) => Color::hex("#440").unwrap(),
+            BiomaBehavior::NPC(_) => Color::hex("#440").unwrap(),
         }
     }
 
     #[rustfmt::skip]
     fn categories(&self) -> Vec<&'static str> {
         match self {
-            BiomaBehavior::Debug(_) => vec![<Debug as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Selector(_) => vec![<Selector as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Sequencer(_) => vec![<Sequencer as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::All(_) => vec![<All as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Any(_) => vec![<Any as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Repeater(_) => vec![<Repeater as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Inverter(_) => vec![<Inverter as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Succeeder(_) => vec![<Succeeder as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Wait(_) => vec![<Wait as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Delay(_) => vec![<Delay as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Guard(_) => vec![<Guard as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Timeout(_) => vec![<Timeout as BehaviorInfo>::TYPE.as_ref()],
-            BiomaBehavior::Subtree(_) => vec![<Subtree<BiomaBehavior> as BehaviorInfo>::TYPE.as_ref()],
+            BiomaBehavior::Debug(_) => vec![<Debug as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Selector(_) => vec![<Selector as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Sequencer(_) => vec![<Sequencer as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::All(_) => vec![<All as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Any(_) => vec![<Any as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Repeater(_) => vec![<Repeater as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Inverter(_) => vec![<Inverter as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Succeeder(_) => vec![<Succeeder as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Wait(_) => vec![<Wait as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Delay(_) => vec![<Delay as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Guard(_) => vec![<Guard as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Timeout(_) => vec![<Timeout as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::Subtree(_) => vec![<Subtree<BiomaBehavior> as BehaviorSpec>::TYPE.as_ref()],
+            BiomaBehavior::NPC(_) => vec![<Subtree<NPCBehavior> as BehaviorSpec>::TYPE.as_ref()],
         }
     }
 }

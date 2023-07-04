@@ -1,0 +1,27 @@
+("➡ Sequencer", Sequencer((
+    random: false,
+)), [
+    ("🏄 Spawn", Spawn((
+        asset: (prop: Eval(eval: r#""npc/Body/Body_Blue_001.glb#Scene0""#)),
+        name: (
+            prop: Value("🏄 Character"),
+        ),
+        target: (
+            prop: Value(""),
+        ),
+        scene: None,
+    )), [], (
+        pos: (363.09766, 10.0078125),
+    )),
+    ("🏋 Anim", Anim((
+        asset: (prop: Eval(eval: r#""npc/Animation_rig/Skinning_Test.glb#Animation0""#)),
+        target: (
+            prop: Value("/🏄 Character/[0]/RootNode"),
+        ),
+        repeat: true,
+    )), [], (
+        pos: (372.3828, 172.59375),
+    )),
+], (
+    pos: (127.5, 2.546875),
+))

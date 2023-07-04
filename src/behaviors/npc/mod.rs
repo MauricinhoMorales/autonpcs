@@ -1,24 +1,32 @@
+use anim::Anim;
 use bevy::{ecs::system::EntityCommands, prelude::*, reflect::TypeUuid};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_behavior_macro::BehaviorFactory;
 use spawn::Spawn;
 
+mod anim;
 mod spawn;
+
+#[derive(Component, Debug, Deref)]
+pub struct SpawnOwned(Entity);
 
 pub struct NPCBehaviorPlugin;
 
 impl Plugin for NPCBehaviorPlugin {
     fn build(&self, app: &mut App) {
         app.add_plugin(BehaviorTreePlugin::<NPCBehavior>::default())
+            .register_type::<Spawn>()
+            .register_type::<Anim>()
+            .register_type::<Subtree<NPCBehavior>>()
             .add_system(spawn::run)
+            .add_system(anim::run)
+            .add_system(subtree::run::<NPCBehavior>)
             .add_system(
                 spawn::removed
                     .in_base_set(CoreSet::PostUpdate)
                     .after(BehaviorSet::PostUpdate),
-            )
-            .add_system(subtree::run::<NPCBehavior>) // Subtrees are typed, need to register them separately
-            .register_type::<Subtree<NPCBehavior>>();
+            );
     }
 }
 
@@ -45,8 +53,9 @@ pub enum NPCBehavior {
     Timeout(Timeout),
 
     Spawn(Spawn),
+    Anim(Anim),
 
-    Subtree(Subtree<NPCBehavior>), // Substrees are typed, this loads same tree type
+    Subtree(Subtree<NPCBehavior>),
 }
 
 impl Default for NPCBehavior {
@@ -81,7 +90,8 @@ impl BehaviorInspectable for NPCBehavior {
             NPCBehavior::Guard(_) => Color::hex("#440").unwrap(),
             NPCBehavior::Timeout(_) => Color::hex("#440").unwrap(),
 
-            NPCBehavior::Spawn(_) => Color::hex("#FFA500").unwrap(),
+            NPCBehavior::Spawn(_) => Color::hex("#AA5500").unwrap(),
+            NPCBehavior::Anim(_) => Color::hex("#AA5500").unwrap(),
 
             NPCBehavior::Subtree(_) => Color::hex("#440").unwrap(),
         }
@@ -90,22 +100,23 @@ impl BehaviorInspectable for NPCBehavior {
     #[rustfmt::skip]
     fn categories(&self) -> Vec<&'static str> {
         match self {
-            NPCBehavior::Debug(_) => vec![<Debug as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Selector(_) => vec![<Selector as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Sequencer(_) => vec![<Sequencer as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::All(_) => vec![<All as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Any(_) => vec![<Any as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Repeater(_) => vec![<Repeater as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Inverter(_) => vec![<Inverter as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Succeeder(_) => vec![<Succeeder as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Wait(_) => vec![<Wait as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Delay(_) => vec![<Delay as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Guard(_) => vec![<Guard as BehaviorInfo>::TYPE.as_ref()],
-            NPCBehavior::Timeout(_) => vec![<Timeout as BehaviorInfo>::TYPE.as_ref()],
+            NPCBehavior::Debug(_) => vec![<Debug as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Selector(_) => vec![<Selector as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Sequencer(_) => vec![<Sequencer as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::All(_) => vec![<All as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Any(_) => vec![<Any as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Repeater(_) => vec![<Repeater as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Inverter(_) => vec![<Inverter as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Succeeder(_) => vec![<Succeeder as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Wait(_) => vec![<Wait as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Delay(_) => vec![<Delay as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Guard(_) => vec![<Guard as BehaviorSpec>::TYPE.as_ref()],
+            NPCBehavior::Timeout(_) => vec![<Timeout as BehaviorSpec>::TYPE.as_ref()],
 
-            NPCBehavior::Spawn(_) => vec![<Spawn as BehaviorInfo>::TYPE.as_ref(), "NPC"],
+            NPCBehavior::Spawn(_) => vec![<Spawn as BehaviorSpec>::TYPE.as_ref(), "NPC"],
+            NPCBehavior::Anim(_) => vec![<Anim as BehaviorSpec>::TYPE.as_ref(), "NPC"],
 
-            NPCBehavior::Subtree(_) => vec![<Subtree<NPCBehavior> as BehaviorInfo>::TYPE.as_ref()],
+            NPCBehavior::Subtree(_) => vec![<Subtree<NPCBehavior> as BehaviorSpec>::TYPE.as_ref()],
         }
     }
 }
