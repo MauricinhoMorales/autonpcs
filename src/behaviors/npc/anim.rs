@@ -1,17 +1,18 @@
 use bevy::{prelude::*, reflect::TypeRegistry};
-use bevy_inspector_egui::{prelude::*, reflect_inspector, egui};
+use bevy_inspector_egui::{egui, prelude::*, reflect_inspector};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_core::epath::{self, EPath};
 use simula_script::{Script, ScriptContext};
+use std::borrow::Cow;
 
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
 )]
 #[reflect(InspectorOptions)]
 pub struct Anim {
-    pub asset: BehaviorProp<String>,
-    pub target: BehaviorProp<EPath>,
+    pub asset: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
+    pub target: BehaviorProp<EPath, Cow<'static, str>, String>,
     #[serde(default)]
     pub repeat: bool,
     #[serde(skip)]
@@ -35,16 +36,17 @@ impl BehaviorUI for Anim {
         type_registry: &TypeRegistry,
     ) -> bool {
         let mut changed = false;
-        changed |= behavior_ui!(self, asset, state, ui, type_registry);
+        changed |= self.asset.ui(Some("asset"), state, ui, type_registry);
         ui.add(egui::Separator::default().horizontal());
-        changed |= behavior_ui!(self, target, state, ui, type_registry);
+        changed |= self.target.ui(Some("target"), state, ui, type_registry);
         ui.add(egui::Separator::default().horizontal());
 
         let type_registry = type_registry.read();
 
         ui.horizontal(|ui| {
             ui.label("repeat: ");
-            changed |= reflect_inspector::ui_for_value(self.repeat.as_reflect_mut(), ui, &type_registry);
+            changed |=
+                reflect_inspector::ui_for_value(self.repeat.as_reflect_mut(), ui, &type_registry);
         });
 
         changed
@@ -57,9 +59,11 @@ impl BehaviorUI for Anim {
         ui: &mut bevy_inspector_egui::egui::Ui,
         type_registry: &TypeRegistry,
     ) {
-        behavior_ui_readonly!(self, asset, state, ui, type_registry);
+        self.asset
+            .ui_readonly(Some("asset"), state, ui, type_registry);
         ui.add(egui::Separator::default().horizontal());
-        behavior_ui_readonly!(self, target, state, ui, type_registry);
+        self.target
+            .ui_readonly(Some("target"), state, ui, type_registry);
         ui.add(egui::Separator::default().horizontal());
 
         let type_registry = type_registry.read();
@@ -137,7 +141,7 @@ pub fn run(
                     (&anim.asset.value, &anim.target.value)
                 {
                     let mut success = false;
-                    let clip = asset_server.load(anim_asset);
+                    let clip = asset_server.load(anim_asset.as_ref());
                     if let Some(anim_target) =
                         epath::select(None, anim_target, &names, &parents, &children, &roots)
                             .first()

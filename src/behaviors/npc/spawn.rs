@@ -3,18 +3,20 @@ use bevy::{prelude::*, reflect::TypeRegistry, scene::SceneInstance};
 use bevy_inspector_egui::prelude::*;
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
-use simula_core::epath::{self, EPath};
+use simula_core::epath::EPath;
 use simula_script::{Script, ScriptContext};
-
+use std::borrow::Cow;
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
 )]
 #[reflect(InspectorOptions)]
 pub struct Spawn {
-    pub asset: BehaviorProp<String>,
-    pub name: BehaviorProp<String>,
-    pub target: BehaviorProp<EPath>,
-    #[reflect(skip_serializing)]
+    pub asset: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
+    pub name: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
+    pub target: BehaviorProp<EPath, Cow<'static, str>, String>,
+
+    #[serde(skip)]
+    #[reflect(ignore)]
     pub scene: Option<Entity>,
 }
 
@@ -34,9 +36,9 @@ impl BehaviorUI for Spawn {
         type_registry: &TypeRegistry,
     ) -> bool {
         let mut changed = false;
-        changed |= behavior_ui!(self, asset, state, ui, type_registry);
-        changed |= behavior_ui!(self, name, state, ui, type_registry);
-        changed |= behavior_ui!(self, target, state, ui, type_registry);
+        changed |= self.asset.ui(Some("asset"), state, ui, type_registry);
+        changed |= self.name.ui(Some("name"), state, ui, type_registry);
+        changed |= self.target.ui(Some("target"), state, ui, type_registry);
         changed
     }
 
@@ -47,9 +49,12 @@ impl BehaviorUI for Spawn {
         ui: &mut bevy_inspector_egui::egui::Ui,
         type_registry: &TypeRegistry,
     ) {
-        behavior_ui_readonly!(self, asset, state, ui, type_registry);
-        behavior_ui_readonly!(self, name, state, ui, type_registry);
-        behavior_ui_readonly!(self, target, state, ui, type_registry);
+        self.asset
+            .ui_readonly(Some("asset"), state, ui, type_registry);
+        self.name
+            .ui_readonly(Some("name"), state, ui, type_registry);
+        self.target
+            .ui_readonly(Some("target"), state, ui, type_registry);
     }
 }
 
@@ -135,13 +140,13 @@ pub fn run(
                 if let (
                     BehaviorPropValue::Some(spawn_asset),
                     BehaviorPropValue::Some(spawn_name),
-                    BehaviorPropValue::Some(spawn_target),
+                    BehaviorPropValue::Some(_spawn_target),
                 ) = (&spawn.asset.value, &spawn.name.value, &spawn.target.value)
                 {
                     // spawn the scene
                     let scene_id = commands
                         .spawn(SceneBundle {
-                            scene: asset_server.load(spawn_asset),
+                            scene: asset_server.load(spawn_asset.as_ref()),
                             ..default()
                         })
                         .insert(Name::new(spawn_name.to_owned()))
