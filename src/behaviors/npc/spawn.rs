@@ -3,17 +3,15 @@ use bevy::{prelude::*, reflect::TypeRegistry, scene::SceneInstance};
 use bevy_inspector_egui::prelude::*;
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
-use simula_core::epath::EPath;
 use simula_script::{Script, ScriptContext};
-use std::borrow::Cow;
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
 )]
 #[reflect(InspectorOptions)]
 pub struct Spawn {
-    pub asset: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
-    pub name: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
-    pub target: BehaviorProp<EPath, Cow<'static, str>, String>,
+    pub asset: BehaviorPropStr,
+    pub name: BehaviorPropStr,
+    pub target: BehaviorPropEPath,
 
     #[serde(skip)]
     #[reflect(ignore)]

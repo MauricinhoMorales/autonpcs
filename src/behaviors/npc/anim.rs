@@ -2,17 +2,16 @@ use bevy::{prelude::*, reflect::TypeRegistry};
 use bevy_inspector_egui::{egui, prelude::*, reflect_inspector};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
-use simula_core::epath::{self, EPath};
+use simula_core::epath::{self};
 use simula_script::{Script, ScriptContext};
-use std::borrow::Cow;
 
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
 )]
 #[reflect(InspectorOptions)]
 pub struct Anim {
-    pub asset: BehaviorProp<Cow<'static, str>, Cow<'static, str>, String>,
-    pub target: BehaviorProp<EPath, Cow<'static, str>, String>,
+    pub asset: BehaviorPropStr,
+    pub target: BehaviorPropEPath,
     #[serde(default)]
     pub repeat: bool,
     #[serde(skip)]
