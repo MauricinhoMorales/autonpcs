@@ -1,5 +1,5 @@
 use bevy::{prelude::*, reflect::TypeRegistry};
-use bevy_inspector_egui::{egui, prelude::*, reflect_inspector};
+use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_core::epath::{self};
@@ -13,7 +13,7 @@ pub struct Anim {
     pub asset: BehaviorPropStr,
     pub target: BehaviorPropEPath,
     #[serde(default)]
-    pub repeat: bool,
+    pub repeat: BehaviorPropGeneric<bool>,
     #[serde(skip)]
     #[reflect(ignore)]
     pub clip: Option<Handle<AnimationClip>>,
@@ -36,18 +36,8 @@ impl BehaviorUI for Anim {
     ) -> bool {
         let mut changed = false;
         changed |= self.asset.ui(Some("asset"), state, ui, type_registry);
-        ui.add(egui::Separator::default().horizontal());
         changed |= self.target.ui(Some("target"), state, ui, type_registry);
-        ui.add(egui::Separator::default().horizontal());
-
-        let type_registry = type_registry.read();
-
-        ui.horizontal(|ui| {
-            ui.label("repeat: ");
-            changed |=
-                reflect_inspector::ui_for_value(self.repeat.as_reflect_mut(), ui, &type_registry);
-        });
-
+        changed |= self.repeat.ui(Some("repeat"), state, ui, type_registry);
         changed
     }
 
@@ -60,17 +50,15 @@ impl BehaviorUI for Anim {
     ) {
         self.asset
             .ui_readonly(Some("asset"), state, ui, type_registry);
-        ui.add(egui::Separator::default().horizontal());
         self.target
             .ui_readonly(Some("target"), state, ui, type_registry);
-        ui.add(egui::Separator::default().horizontal());
+        self.repeat
+            .ui_readonly(Some("repeat"), state, ui, type_registry);
 
-        let type_registry = type_registry.read();
-
-        ui.horizontal(|ui| {
-            ui.label("repeat: ");
-            reflect_inspector::ui_for_value_readonly(self.repeat.as_reflect(), ui, &type_registry);
-        });
+        // show if we have a clip
+        if let Some(clip) = &self.clip {
+            ui.label(egui::RichText::new(format!("clip: {:?}", clip)).small());
+        }
     }
 }
 
@@ -135,9 +123,26 @@ pub fn run(
                     }
                 }
 
+                if let BehaviorPropValue::None = anim.repeat.value {
+                    let result = anim.repeat.fetch(
+                        node,
+                        &mut scripts,
+                        &script_ctx_handles,
+                        &mut script_ctxs,
+                    );
+                    if let Some(Err(err)) = result {
+                        error!("Script errored: {:?}", err);
+                        commands.entity(entity).insert(BehaviorFailure);
+                        continue;
+                    }
+                }
+
                 // if all eval properties are ready, assign anim clip to target
-                if let (BehaviorPropValue::Some(anim_asset), BehaviorPropValue::Some(anim_target)) =
-                    (&anim.asset.value, &anim.target.value)
+                if let (
+                    BehaviorPropValue::Some(anim_asset),
+                    BehaviorPropValue::Some(anim_target),
+                    BehaviorPropValue::Some(anim_repeat),
+                ) = (&anim.asset.value, &anim.target.value, &anim.repeat.value)
                 {
                     let mut success = false;
                     let clip = asset_server.load(anim_asset.as_ref());
@@ -151,7 +156,7 @@ pub fn run(
                             success = true;
                             if let Some(mut anim_player) = anim_player {
                                 anim_player.start(clip.clone());
-                                if anim.repeat {
+                                if *anim_repeat {
                                     anim_player.repeat();
                                 } else {
                                     anim_player.stop_repeating();
@@ -159,7 +164,7 @@ pub fn run(
                             } else {
                                 let mut anim_player = AnimationPlayer::default();
                                 anim_player.start(clip.clone());
-                                if anim.repeat {
+                                if *anim_repeat {
                                     anim_player.repeat();
                                 }
                                 commands.entity(entity).insert(anim_player);

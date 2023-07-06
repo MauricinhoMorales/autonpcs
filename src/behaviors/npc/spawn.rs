@@ -1,6 +1,6 @@
 use super::SpawnOwned;
 use bevy::{prelude::*, reflect::TypeRegistry, scene::SceneInstance};
-use bevy_inspector_egui::prelude::*;
+use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_script::{Script, ScriptContext};
@@ -53,6 +53,11 @@ impl BehaviorUI for Spawn {
             .ui_readonly(Some("name"), state, ui, type_registry);
         self.target
             .ui_readonly(Some("target"), state, ui, type_registry);
+
+        // show if we have a scene
+        if let Some(scene) = self.scene {
+            ui.label(egui::RichText::new(format!("scene: {:?}", scene)).small());
+        }
     }
 }
 

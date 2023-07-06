@@ -1,8 +1,8 @@
+use super::npc::NPCBehavior;
 use bevy::{ecs::system::EntityCommands, prelude::*, reflect::TypeUuid};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_behavior_macro::BehaviorFactory;
-use super::npc::NPCBehavior;
 
 pub struct BiomaBehaviorPlugin;
 
