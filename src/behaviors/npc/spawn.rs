@@ -34,9 +34,9 @@ impl BehaviorUI for Spawn {
         type_registry: &TypeRegistry,
     ) -> bool {
         let mut changed = false;
-        changed |= self.asset.ui(Some("asset"), state, ui, type_registry);
-        changed |= self.name.ui(Some("name"), state, ui, type_registry);
-        changed |= self.target.ui(Some("target"), state, ui, type_registry);
+        changed |= behavior_ui!(self, asset, state, ui, type_registry);
+        changed |= behavior_ui!(self, name, state, ui, type_registry);
+        changed |= behavior_ui!(self, target, state, ui, type_registry);
         changed
     }
 
@@ -47,12 +47,9 @@ impl BehaviorUI for Spawn {
         ui: &mut bevy_inspector_egui::egui::Ui,
         type_registry: &TypeRegistry,
     ) {
-        self.asset
-            .ui_readonly(Some("asset"), state, ui, type_registry);
-        self.name
-            .ui_readonly(Some("name"), state, ui, type_registry);
-        self.target
-            .ui_readonly(Some("target"), state, ui, type_registry);
+        behavior_ui_readonly!(self, asset, state, ui, type_registry);
+        behavior_ui_readonly!(self, name, state, ui, type_registry);
+        behavior_ui_readonly!(self, target, state, ui, type_registry);
 
         // show if we have a scene
         if let Some(scene) = self.scene {

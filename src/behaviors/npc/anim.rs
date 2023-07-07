@@ -35,9 +35,9 @@ impl BehaviorUI for Anim {
         type_registry: &TypeRegistry,
     ) -> bool {
         let mut changed = false;
-        changed |= self.asset.ui(Some("asset"), state, ui, type_registry);
-        changed |= self.target.ui(Some("target"), state, ui, type_registry);
-        changed |= self.repeat.ui(Some("repeat"), state, ui, type_registry);
+        changed |= behavior_ui!(self, asset, state, ui, type_registry);
+        changed |= behavior_ui!(self, target, state, ui, type_registry);
+        changed |= behavior_ui!(self, repeat, state, ui, type_registry);
         changed
     }
 
@@ -48,12 +48,9 @@ impl BehaviorUI for Anim {
         ui: &mut bevy_inspector_egui::egui::Ui,
         type_registry: &TypeRegistry,
     ) {
-        self.asset
-            .ui_readonly(Some("asset"), state, ui, type_registry);
-        self.target
-            .ui_readonly(Some("target"), state, ui, type_registry);
-        self.repeat
-            .ui_readonly(Some("repeat"), state, ui, type_registry);
+        behavior_ui_readonly!(self, asset, state, ui, type_registry);
+        behavior_ui_readonly!(self, target, state, ui, type_registry);
+        behavior_ui_readonly!(self, repeat, state, ui, type_registry);
 
         // show if we have a clip
         if let Some(clip) = &self.clip {
