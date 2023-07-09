@@ -10,9 +10,6 @@
         name: (
             prop: Value("🏄 Character"),
         ),
-        target: (
-            prop: Value(""),
-        ),
     )), [], (
         pos: (400.0, 0.0),
     )),

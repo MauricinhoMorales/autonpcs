@@ -10,11 +10,18 @@
         name: (
             prop: Value("🏄 Character"),
         ),
-        target: (
-            prop: Value(""),
-        ),
     )), [], (
         pos: (400.0, 0.0),
+    )),
+    ("🏄 Spawn", Spawn((
+        asset: (
+            prop: Value("npc/Hair/Hair_001.glb#Scene0"),
+        ),
+        name: (
+            prop: Value("Hair"),
+        ),
+    )), [], (
+        pos: (394.90625, 196.23438),
     )),
     ("🏋 Anim", Anim((
         asset: (
@@ -29,7 +36,7 @@
             prop: Value(false),
         ),
     )), [], (
-        pos: (400.0, 200.0),
+        pos: (393.0664, 392.60156),
     )),
 ], (
     pos: (200.0, 0.0),

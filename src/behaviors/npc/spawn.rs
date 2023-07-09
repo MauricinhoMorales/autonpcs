@@ -11,7 +11,8 @@ use simula_script::{Script, ScriptContext};
 pub struct Spawn {
     pub asset: BehaviorPropStr,
     pub name: BehaviorPropStr,
-    pub target: BehaviorPropEPath,
+    #[serde(default)]
+    pub target: BehaviorPropOption<BehaviorPropEPath>,
 
     #[serde(skip)]
     #[reflect(ignore)]
@@ -75,7 +76,7 @@ pub fn run(
             // reset eval properties
             spawn.asset.value = BehaviorPropValue::None;
             spawn.name.value = BehaviorPropValue::None;
-            spawn.target.value = BehaviorPropValue::None;
+            spawn.target = BehaviorPropOption::default();
 
             // despawn the scene if one already exists
             if let Some(scene) = spawn.scene {
@@ -122,17 +123,15 @@ pub fn run(
                         continue;
                     }
                 }
-                if let BehaviorPropValue::None = spawn.target.value {
-                    let result = spawn.target.fetch(
-                        node,
-                        &mut scripts,
-                        &script_ctx_handles,
-                        &mut script_ctxs,
-                    );
-                    if let Some(Err(err)) = result {
-                        error!("Script errored: {:?}", err);
-                        commands.entity(entity).insert(BehaviorFailure);
-                        continue;
+                if let Some(prop) = &mut spawn.target.prop {
+                    if let BehaviorPropValue::None = prop.value {
+                        let result =
+                            prop.fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                        if let Some(Err(err)) = result {
+                            error!("Script errored: {:?}", err);
+                            commands.entity(entity).insert(BehaviorFailure);
+                            continue;
+                        }
                     }
                 }
 
@@ -140,8 +139,8 @@ pub fn run(
                 if let (
                     BehaviorPropValue::Some(spawn_asset),
                     BehaviorPropValue::Some(spawn_name),
-                    BehaviorPropValue::Some(_spawn_target),
-                ) = (&spawn.asset.value, &spawn.name.value, &spawn.target.value)
+                    Some(spawn_target),
+                ) = (&spawn.asset.value, &spawn.name.value, &spawn.target.prop)
                 {
                     // spawn the scene
                     let scene_id = commands
