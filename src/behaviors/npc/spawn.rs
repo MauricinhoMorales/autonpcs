@@ -3,7 +3,9 @@ use bevy::{prelude::*, reflect::TypeRegistry, scene::SceneInstance};
 use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
+use simula_core::epath;
 use simula_script::{Script, ScriptContext};
+
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
 )]
@@ -16,7 +18,7 @@ pub struct Spawn {
 
     #[serde(skip)]
     #[reflect(ignore)]
-    pub scene: Option<Entity>,
+    pub scenes: Vec<Entity>,
 }
 
 impl BehaviorSpec for Spawn {
@@ -52,8 +54,8 @@ impl BehaviorUI for Spawn {
         behavior_ui_readonly!(self, name, state, ui, type_registry);
         behavior_ui_readonly!(self, target, state, ui, type_registry);
 
-        // show if we have a scene
-        if let Some(scene) = self.scene {
+        // show if we have scenes
+        for scene in &self.scenes {
             ui.label(egui::RichText::new(format!("scene: {:?}", scene)).small());
         }
     }
@@ -67,33 +69,47 @@ pub fn run(
         BehaviorRunQuery,
     >,
     owned_spawns: Query<(Entity, Option<&Children>), (With<SpawnOwned>, With<SceneInstance>)>,
+    // for handling scripts
     mut scripts: ResMut<Assets<Script>>,
     script_ctx_handles: Query<&Handle<ScriptContext>>,
     mut script_ctxs: ResMut<Assets<ScriptContext>>,
+    // for handling epaths
+    names: Query<&Name>,
+    parents: Query<&Parent>,
+    children: Query<&Children>,
+    roots: Query<Entity, Without<Parent>>,
 ) {
     for (entity, mut spawn, node, started) in &mut spawns {
         if started.is_some() {
             // reset eval properties
             spawn.asset.value = BehaviorPropValue::None;
             spawn.name.value = BehaviorPropValue::None;
-            spawn.target = BehaviorPropOption::default();
-
-            // despawn the scene if one already exists
-            if let Some(scene) = spawn.scene {
-                info!("despawning scene: {:?}", scene);
-                commands.entity(scene).despawn_recursive();
+            if let Some(target) = &mut *spawn.target {
+                target.value = BehaviorPropValue::None;
             }
-            spawn.scene = None;
+
+            // despawn scenes if they already exists
+            for scene in &spawn.scenes {
+                info!("despawning scene: {:?}", scene);
+                commands.entity(*scene).despawn_recursive();
+            }
+            spawn.scenes.clear();
         } else {
             // if NPC has been spawned
-            if let Some(scene) = spawn.scene {
-                if let Ok((_owned, children)) = owned_spawns.get(scene) {
-                    // if has children, complete with success
-                    if let Some(children) = children {
-                        if !children.is_empty() {
-                            commands.entity(entity).insert(BehaviorSuccess);
+            if spawn.scenes.len() > 0 {
+                let mut successes = 0;
+                for scene in &spawn.scenes {
+                    if let Ok((_owned, children)) = owned_spawns.get(*scene) {
+                        // if has children, complete with success
+                        if let Some(children) = children {
+                            if !children.is_empty() {
+                                successes += 1;
+                            }
                         }
                     }
+                }
+                if successes == spawn.scenes.len() {
+                    commands.entity(entity).insert(BehaviorSuccess);
                 }
             }
             // else still working on eval properties and spawning
@@ -123,7 +139,7 @@ pub fn run(
                         continue;
                     }
                 }
-                if let Some(prop) = &mut spawn.target.prop {
+                if let Some(prop) = &mut spawn.target.as_mut() {
                     if let BehaviorPropValue::None = prop.value {
                         let result =
                             prop.fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
@@ -135,26 +151,69 @@ pub fn run(
                     }
                 }
 
+                // if we have a spawn target, check if ready
+                let spawn_target = if let Some(prop) = &*spawn.target {
+                    if let BehaviorPropValue::Some(value) = &prop.value {
+                        Some(Some(value))
+                    } else {
+                        None
+                    }
+                } else {
+                    Some(None)
+                };
+
                 // if all eval properties are ready, spawn the NPC
                 if let (
                     BehaviorPropValue::Some(spawn_asset),
                     BehaviorPropValue::Some(spawn_name),
                     Some(spawn_target),
-                ) = (&spawn.asset.value, &spawn.name.value, &spawn.target.prop)
+                ) = (&spawn.asset.value, &spawn.name.value, &spawn_target)
                 {
-                    // spawn the scene
-                    let scene_id = commands
-                        .spawn(SceneBundle {
-                            scene: asset_server.load(spawn_asset.as_ref()),
-                            ..default()
-                        })
-                        .insert(Name::new(spawn_name.to_owned()))
-                        .insert(SpawnOwned(entity))
-                        .id();
-                    info!("spawning scene: {:?}", scene_id);
+                    let mut scenes = vec![];
 
-                    // keep track of the spawned scene
-                    spawn.scene = Some(scene_id);
+                    let targets = if let Some(spawn_target) = spawn_target {
+                        epath::select(None, spawn_target, &names, &parents, &children, &roots)
+                            .into_iter()
+                            .map(Some)
+                            .collect()
+                    } else {
+                        vec![None]
+                    };
+
+                    for target in &targets {
+                        // spawn the scene
+                        let scene_id = commands
+                            .spawn(SceneBundle {
+                                scene: asset_server.load(spawn_asset.as_ref()),
+                                ..default()
+                            })
+                            .insert(Name::new(spawn_name.to_owned()))
+                            .insert(SpawnOwned(entity))
+                            .id();
+
+                        if let Some(target) = target {
+                            info!(
+                                "spawning scene: {:?} for target: {:?}",
+                                spawn_name, target.name
+                            );
+                            commands.entity(target.entity).add_child(scene_id);
+                        } else {
+                            info!("spawning scene: {:?}", scene_id);
+                        }
+
+                        // keep track of the spawned scene
+                        scenes.push(scene_id);
+                    }
+
+                    // if no scenes were spawned, fail
+                    if scenes.len() == 0 {
+                        warn!("No scenes spawned for: {:?}", spawn_name);
+                        commands.entity(entity).insert(BehaviorFailure);
+                    }
+
+                    for scene in &scenes {
+                        spawn.scenes.push(*scene);
+                    }
                 }
             }
         }

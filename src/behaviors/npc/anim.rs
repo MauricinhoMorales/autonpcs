@@ -88,94 +88,84 @@ pub fn run(
 
             // remove previous clip
             anim.clip = None;
-        } else {
-            // if we have an anim clip, we're done
-            if anim.clip.is_some() {
-                commands.entity(entity).insert(BehaviorSuccess);
+        }
+        // keep working on eval properties
+        else if anim.clip.is_none() {
+            if let BehaviorPropValue::None = anim.asset.value {
+                let result =
+                    anim.asset
+                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                if let Some(Err(err)) = result {
+                    error!("Script errored: {:?}", err);
+                    commands.entity(entity).insert(BehaviorFailure);
+                    continue;
+                }
             }
-            // else still working on eval properties and assigning clip
-            else {
-                // keep working on eval properties
-                if let BehaviorPropValue::None = anim.asset.value {
-                    let result =
-                        anim.asset
-                            .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
-                    if let Some(Err(err)) = result {
-                        error!("Script errored: {:?}", err);
-                        commands.entity(entity).insert(BehaviorFailure);
-                        continue;
-                    }
+            if let BehaviorPropValue::None = anim.target.value {
+                let result =
+                    anim.target
+                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                if let Some(Err(err)) = result {
+                    error!("Script errored: {:?}", err);
+                    commands.entity(entity).insert(BehaviorFailure);
+                    continue;
                 }
-                if let BehaviorPropValue::None = anim.target.value {
-                    let result = anim.target.fetch(
-                        node,
-                        &mut scripts,
-                        &script_ctx_handles,
-                        &mut script_ctxs,
-                    );
-                    if let Some(Err(err)) = result {
-                        error!("Script errored: {:?}", err);
-                        commands.entity(entity).insert(BehaviorFailure);
-                        continue;
-                    }
-                }
+            }
 
-                if let BehaviorPropValue::None = anim.repeat.value {
-                    let result = anim.repeat.fetch(
-                        node,
-                        &mut scripts,
-                        &script_ctx_handles,
-                        &mut script_ctxs,
-                    );
-                    if let Some(Err(err)) = result {
-                        error!("Script errored: {:?}", err);
-                        commands.entity(entity).insert(BehaviorFailure);
-                        continue;
-                    }
+            if let BehaviorPropValue::None = anim.repeat.value {
+                let result =
+                    anim.repeat
+                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                if let Some(Err(err)) = result {
+                    error!("Script errored: {:?}", err);
+                    commands.entity(entity).insert(BehaviorFailure);
+                    continue;
                 }
+            }
 
-                // if all eval properties are ready, assign anim clip to target
-                if let (
-                    BehaviorPropValue::Some(anim_asset),
-                    BehaviorPropValue::Some(anim_target),
-                    BehaviorPropValue::Some(anim_repeat),
-                ) = (&anim.asset.value, &anim.target.value, &anim.repeat.value)
-                {
-                    let mut success = false;
-                    let clip = asset_server.load(anim_asset.as_ref());
-                    if let Some(anim_target) =
-                        epath::select(None, anim_target, &names, &parents, &children, &roots)
-                            .first()
-                    {
-                        if let Ok((entity, _name, anim_player)) =
-                            anim_players.get_mut(anim_target.entity)
-                        {
-                            success = true;
-                            if let Some(mut anim_player) = anim_player {
-                                anim_player.start(clip.clone());
-                                if *anim_repeat {
-                                    anim_player.repeat();
-                                } else {
-                                    anim_player.stop_repeating();
-                                }
+            // if all eval properties are ready, assign anim clip to target
+            if let (
+                BehaviorPropValue::Some(anim_asset),
+                BehaviorPropValue::Some(anim_target),
+                BehaviorPropValue::Some(anim_repeat),
+            ) = (&anim.asset.value, &anim.target.value, &anim.repeat.value)
+            {
+                let anim_target = anim_target.clone();
+                let clip = asset_server.load(anim_asset.as_ref());
+
+                let mut successes = 0;
+
+                let targets =
+                    epath::select(None, &anim_target, &names, &parents, &children, &roots);
+                for target in &targets {
+                    if let Ok((entity, _name, anim_player)) = anim_players.get_mut(target.entity) {
+                        successes += 1;
+                        if let Some(mut anim_player) = anim_player {
+                            anim_player.start(clip.clone());
+                            if *anim_repeat {
+                                anim_player.repeat();
                             } else {
-                                let mut anim_player = AnimationPlayer::default();
-                                anim_player.start(clip.clone());
-                                if *anim_repeat {
-                                    anim_player.repeat();
-                                }
-                                commands.entity(entity).insert(anim_player);
+                                anim_player.stop_repeating();
                             }
+                        } else {
+                            let mut anim_player = AnimationPlayer::default();
+                            anim_player.start(clip.clone());
+                            if *anim_repeat {
+                                anim_player.repeat();
+                            }
+                            commands.entity(entity).insert(anim_player);
                         }
-                    }
-
-                    if success {
-                        anim.clip = Some(clip.clone());
-                        commands.entity(entity).insert(BehaviorSuccess);
                     } else {
-                        error!("Anim target not found: {:?}", anim_target);
-                        commands.entity(entity).insert(BehaviorFailure);
+                        warn!("Invalid anim target: {:?}", target);
                     }
+                }
+
+                anim.clip = Some(clip.clone());
+
+                if successes == targets.len() {
+                    commands.entity(entity).insert(BehaviorSuccess);
+                } else {
+                    commands.entity(entity).insert(BehaviorFailure);
                 }
             }
         }
