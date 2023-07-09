@@ -1,0 +1,38 @@
+("➡ Sequencer", Sequencer((
+    random: false,
+)), [
+    ("🏄 Spawn", Spawn((
+        asset: (
+            prop: Eval(
+                eval: "\"models/fox/Fox.glb#Scene0\"",
+            ),
+        ),
+        name: (
+            prop: Value("🏄 Character"),
+        ),
+        target: (
+            prop: Value(""),
+        ),
+    )), [], (
+        pos: (400.0, 0.0),
+    )),
+    ("🏋 Anim", Anim((
+        asset: (
+            prop: Eval(
+                eval: "\"models/fox/Fox.glb#Animation0\"",
+            ),
+        ),
+        target: (
+            prop: Value("/🏄 Character/[0]/root"),
+        ),
+        repeat: (
+            prop: Eval(
+                eval: "2 + 2 == 4",
+            ),
+        ),
+    )), [], (
+        pos: (400.1211, 200.0),
+    )),
+], (
+    pos: (200.0, 0.0),
+))
