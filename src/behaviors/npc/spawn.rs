@@ -3,7 +3,7 @@ use bevy::{prelude::*, reflect::TypeRegistry, scene::SceneInstance};
 use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
-use simula_core::epath;
+use simula_core::epath::{self, EPathQueries};
 use simula_script::{Script, ScriptContext};
 
 #[derive(
@@ -74,10 +74,7 @@ pub fn run(
     script_ctx_handles: Query<&Handle<ScriptContext>>,
     mut script_ctxs: ResMut<Assets<ScriptContext>>,
     // for handling epaths
-    names: Query<&Name>,
-    parents: Query<&Parent>,
-    children: Query<&Children>,
-    roots: Query<Entity, Without<Parent>>,
+    equeries: EPathQueries,
 ) {
     for (entity, mut spawn, node, started) in &mut spawns {
         if started.is_some() {
@@ -172,7 +169,7 @@ pub fn run(
                     let mut scenes = vec![];
 
                     let targets = if let Some(spawn_target) = spawn_target {
-                        epath::select(None, spawn_target, &names, &parents, &children, &roots)
+                        epath::select(None, spawn_target, &equeries)
                             .into_iter()
                             .map(Some)
                             .collect()

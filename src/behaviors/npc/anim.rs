@@ -2,7 +2,7 @@ use bevy::{prelude::*, reflect::TypeRegistry};
 use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
-use simula_core::epath::{self};
+use simula_core::epath::{self, EPathQueries};
 use simula_script::{Script, ScriptContext};
 
 #[derive(
@@ -75,10 +75,7 @@ pub fn run(
     script_ctx_handles: Query<&Handle<ScriptContext>>,
     mut script_ctxs: ResMut<Assets<ScriptContext>>,
     // for handling epaths
-    names: Query<&Name>,
-    parents: Query<&Parent>,
-    children: Query<&Children>,
-    roots: Query<Entity, Without<Parent>>,
+    equeries: EPathQueries,
 ) {
     for (entity, mut anim, node, started) in &mut anims {
         if started.is_some() {
@@ -135,8 +132,7 @@ pub fn run(
 
                 let mut successes = 0;
 
-                let targets =
-                    epath::select(None, &anim_target, &names, &parents, &children, &roots);
+                let targets = epath::select(None, &anim_target, &equeries);
                 for target in &targets {
                     if let Ok((entity, _name, anim_player)) = anim_players.get_mut(target.entity) {
                         successes += 1;
