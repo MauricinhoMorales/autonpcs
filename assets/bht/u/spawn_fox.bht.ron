@@ -1,0 +1,114 @@
+("⟳ Repeater", Repeater((
+    repeat: Forever,
+)), [
+    ("➡ Sequencer", Sequencer((
+        random: false,
+    )), [
+        ("🏄 Spawn", Spawn((
+            asset: (
+                prop: Eval(
+                    eval: "\"models/fox/Fox.glb#Scene0\"",
+                ),
+            ),
+            name: (
+                prop: Value("🏄 Character"),
+            ),
+            target: (
+                prop: Value(""),
+            ),
+        )), [], (
+            pos: (600.0, 0.0),
+        )),
+        ("➡ Sequencer", Sequencer((
+            random: false,
+        )), [
+            ("⇉ All", All(()), [
+                ("⌛ Wait", Wait((
+                    duration: 2.0,
+                    fail: false,
+                )), [], (
+                    pos: (1000.0, 200.0),
+                )),
+                ("🏋 Anim", Anim((
+                    asset: (
+                        prop: Eval(
+                            eval: "\"models/fox/Fox.glb#Animation0\"",
+                        ),
+                    ),
+                    target: (
+                        prop: Value("/🏄 Character/[0]/root"),
+                    ),
+                    repeat: (
+                        prop: Eval(
+                            eval: "true",
+                        ),
+                    ),
+                )), [], (
+                    pos: (1000.0, 400.0),
+                )),
+            ], (
+                pos: (800.0, 200.0),
+            )),
+            ("⇉ All", All(()), [
+                ("⌛ Wait", Wait((
+                    duration: 2.0,
+                    fail: false,
+                )), [], (
+                    pos: (1000.0, 600.0),
+                )),
+                ("🏋 Anim", Anim((
+                    asset: (
+                        prop: Eval(
+                            eval: "\"models/fox/Fox.glb#Animation1\"",
+                        ),
+                    ),
+                    target: (
+                        prop: Value("/🏄 Character/[0]/root"),
+                    ),
+                    repeat: (
+                        prop: Eval(
+                            eval: "1+1 == 2",
+                        ),
+                    ),
+                )), [], (
+                    pos: (1000.0, 800.0),
+                )),
+            ], (
+                pos: (800.0, 600.0),
+            )),
+            ("⇉ All", All(()), [
+                ("⌛ Wait", Wait((
+                    duration: 2.0,
+                    fail: false,
+                )), [], (
+                    pos: (1000.0, 1000.0),
+                )),
+                ("🏋 Anim", Anim((
+                    asset: (
+                        prop: Eval(
+                            eval: "\"models/fox/Fox.glb#Animation2\"",
+                        ),
+                    ),
+                    target: (
+                        prop: Value("/🏄 Character/[0]/root"),
+                    ),
+                    repeat: (
+                        prop: Eval(
+                            eval: "3 > 2",
+                        ),
+                    ),
+                )), [], (
+                    pos: (1000.0, 1200.0),
+                )),
+            ], (
+                pos: (800.0, 1000.0),
+            )),
+        ], (
+            pos: (600.0, 200.0),
+        )),
+    ], (
+        pos: (400.0, 0.0),
+    )),
+], (
+    pos: (200.0, 0.0),
+))
