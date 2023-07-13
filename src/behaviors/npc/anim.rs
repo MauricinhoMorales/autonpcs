@@ -3,7 +3,6 @@ use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_core::epath::{self, EPathQueries};
-use simula_script::{Script, ScriptContext};
 
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
@@ -70,11 +69,7 @@ pub fn run(
         BehaviorRunQuery,
     >,
     mut anim_players: Query<(Entity, &Name, Option<&mut AnimationPlayer>)>,
-    // for handling scripts
-    mut scripts: ResMut<Assets<Script>>,
-    script_ctx_handles: Query<&Handle<ScriptContext>>,
-    mut script_ctxs: ResMut<Assets<ScriptContext>>,
-    // for handling epaths
+    mut scripts: ScriptQueries,
     equeries: EPathQueries,
 ) {
     for (entity, mut anim, node, started) in &mut anims {
@@ -89,9 +84,7 @@ pub fn run(
         // keep working on eval properties
         else if anim.clip.is_none() {
             if let BehaviorPropValue::None = anim.asset.value {
-                let result =
-                    anim.asset
-                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                let result = anim.asset.fetch(node, &mut scripts);
                 if let Some(Err(err)) = result {
                     error!("Script errored: {:?}", err);
                     commands.entity(entity).insert(BehaviorFailure);
@@ -99,9 +92,7 @@ pub fn run(
                 }
             }
             if let BehaviorPropValue::None = anim.target.value {
-                let result =
-                    anim.target
-                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                let result = anim.target.fetch(node, &mut scripts);
                 if let Some(Err(err)) = result {
                     error!("Script errored: {:?}", err);
                     commands.entity(entity).insert(BehaviorFailure);
@@ -110,9 +101,7 @@ pub fn run(
             }
 
             if let BehaviorPropValue::None = anim.repeat.value {
-                let result =
-                    anim.repeat
-                        .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                let result = anim.repeat.fetch(node, &mut scripts);
                 if let Some(Err(err)) = result {
                     error!("Script errored: {:?}", err);
                     commands.entity(entity).insert(BehaviorFailure);

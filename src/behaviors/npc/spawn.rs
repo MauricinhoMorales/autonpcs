@@ -4,7 +4,6 @@ use bevy_inspector_egui::{egui, prelude::*};
 use serde::{Deserialize, Serialize};
 use simula_behavior::prelude::*;
 use simula_core::epath::{self, EPathQueries};
-use simula_script::{Script, ScriptContext};
 
 #[derive(
     Debug, Component, Reflect, FromReflect, Clone, Deserialize, Serialize, InspectorOptions, Default,
@@ -69,11 +68,7 @@ pub fn run(
         BehaviorRunQuery,
     >,
     owned_spawns: Query<(Entity, Option<&Children>), (With<SpawnOwned>, With<SceneInstance>)>,
-    // for handling scripts
-    mut scripts: ResMut<Assets<Script>>,
-    script_ctx_handles: Query<&Handle<ScriptContext>>,
-    mut script_ctxs: ResMut<Assets<ScriptContext>>,
-    // for handling epaths
+    mut scripts: ScriptQueries,
     equeries: EPathQueries,
 ) {
     for (entity, mut spawn, node, started) in &mut spawns {
@@ -113,12 +108,7 @@ pub fn run(
             else {
                 // keep working on eval properties
                 if let BehaviorPropValue::None = spawn.asset.value {
-                    let result = spawn.asset.fetch(
-                        node,
-                        &mut scripts,
-                        &script_ctx_handles,
-                        &mut script_ctxs,
-                    );
+                    let result = spawn.asset.fetch(node, &mut scripts);
                     if let Some(Err(err)) = result {
                         error!("Script errored: {:?}", err);
                         commands.entity(entity).insert(BehaviorFailure);
@@ -126,10 +116,7 @@ pub fn run(
                     }
                 }
                 if let BehaviorPropValue::None = spawn.name.value {
-                    let result =
-                        spawn
-                            .name
-                            .fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                    let result = spawn.name.fetch(node, &mut scripts);
                     if let Some(Err(err)) = result {
                         error!("Script errored: {:?}", err);
                         commands.entity(entity).insert(BehaviorFailure);
@@ -138,8 +125,7 @@ pub fn run(
                 }
                 if let Some(prop) = &mut spawn.target.as_mut() {
                     if let BehaviorPropValue::None = prop.value {
-                        let result =
-                            prop.fetch(node, &mut scripts, &script_ctx_handles, &mut script_ctxs);
+                        let result = prop.fetch(node, &mut scripts);
                         if let Some(Err(err)) = result {
                             error!("Script errored: {:?}", err);
                             commands.entity(entity).insert(BehaviorFailure);
